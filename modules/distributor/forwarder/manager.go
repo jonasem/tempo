@@ -18,8 +18,8 @@ import (
 )
 
 const (
-	defaultWorkerCount = 2
-	defaultQueueSize   = 100
+	defaultWorkerCount = 5
+	defaultQueueSize   = 10000
 )
 
 type Overrides interface {
