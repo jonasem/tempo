@@ -313,10 +313,12 @@ message QueryRangeRequest {
   uint64 step = 4;
   uint32 shard = 5;
   uint32 of = 6;
+  string queryMode = 7;
 }
 
 message QueryRangeResponse {
   repeated TimeSeries series = 1;
+  SearchMetrics metrics = 2;
 }
 
 message Sample {
