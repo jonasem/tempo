@@ -200,7 +200,7 @@ func (s queryRangeSharder) RoundTrip(r *http.Request) (*http.Response, error) {
 
 			mtx.Lock()
 			defer mtx.Unlock()
-			c.Combine(results.Series)
+			c.Combine(results)
 		}(job)
 	}
 
@@ -343,6 +343,9 @@ func (s *queryRangeSharder) buildBackendRequests(tenantID string, searchReq *tem
 			if samplingRate != 1.0 {
 				shardR.Shard *= uint32(1.0 / samplingRate)
 				shardR.Of *= uint32(1.0 / samplingRate)
+
+				// Set final sampling rate after integer rounding
+				samplingRate = float64(shards) / float64(shardR.Of)
 			}
 
 			select {
@@ -389,11 +392,19 @@ func (s *queryRangeSharder) generatorRequest(searchReq tempopb.QueryRangeRequest
 		return nil
 	}
 
-	// Shard 0 indicates generator request
-	searchReq.Shard = 0
-	searchReq.Of = 0
+	searchReq.QueryMode = "recent"
+
+	// No sharding on the generators (unecessary), but we do apply sampling
+	// rates.  In this case we always execute the first shard.
+	searchReq.Shard = 1
+	searchReq.Of = uint32(1.0 / samplingRate)
+
+	// Set final sampling rate after integer rounding
+	samplingRate = 1.0 / float64(searchReq.Of)
+
 	return &queryRangeJob{
-		req: searchReq,
+		req:          searchReq,
+		samplingRate: samplingRate,
 	}
 }
 
